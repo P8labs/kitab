@@ -1,9 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import Home from "./pages/Home";
 import Onboard from "./pages/Onboard";
 import GateKeeper from "./middleware/GateKeeper";
 import { AppProvider } from "./state/app";
+import Home from "./pages/Home";
 
 export default function App() {
   return (
@@ -11,7 +11,7 @@ export default function App() {
       <BrowserRouter>
         <GateKeeper>
           <Routes>
-            <Route path="/" element={<Onboard />} />
+            <Route path="/" element={<Home />} />
             <Route path="/onboard" element={<Onboard />} />
           </Routes>
         </GateKeeper>

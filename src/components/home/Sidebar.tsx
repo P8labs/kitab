@@ -1,5 +1,17 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useMemo, useState } from "react";
+import {
+  BellSimple,
+  GearSix,
+  HashStraight,
+  Lightning,
+  NotePencil,
+  TagSimple,
+  TrashSimple,
+} from "@phosphor-icons/react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import { Tree } from "./Tree";
 
 type FileNode = {
@@ -8,71 +20,199 @@ type FileNode = {
   is_dir: boolean;
 };
 
+type CreateType = "file" | "folder";
+
+const navItems = [
+  { label: "All Notes", icon: NotePencil },
+  { label: "Notifications", icon: BellSimple },
+  { label: "Settings", icon: GearSix },
+  { label: "Tags", icon: TagSimple },
+  { label: "Trash", icon: TrashSimple },
+];
+
 export function Sidebar({
   tree,
   onOpen,
   vaultPath,
   refresh,
+  onCreate,
+  activeFile,
 }: {
   tree: FileNode[];
   onOpen: (path: string) => void;
   vaultPath: string;
   refresh: () => void;
+  onCreate: (type: CreateType, name: string) => Promise<void>;
+  activeFile: string | null;
 }) {
   const [creating, setCreating] = useState(false);
-  const [fileName, setFileName] = useState("");
+  const [createType, setCreateType] = useState<CreateType>("file");
+  const [name, setName] = useState("");
 
-  const createFile = async () => {
-    if (!fileName || !vaultPath) return;
+  const vaultName = useMemo(() => {
+    if (!vaultPath) return "Vault";
+    const parts = vaultPath.split(/[/\\]/).filter(Boolean);
+    return parts[parts.length - 1] || "Vault";
+  }, [vaultPath]);
 
-    const fullPath = `${vaultPath}/${fileName}.md`;
+  const derivedTags = useMemo(() => {
+    if (!tree.length) return ["inbox", "personal", "ideas", "archive"];
+    return Array.from(
+      new Set(
+        tree
+          .filter((node) => !node.is_dir)
+          .slice(0, 8)
+          .map((node) =>
+            node.name
+              .replace(".md", "")
+              .split(/\W+/)[0]
+              .toLowerCase() || "note"
+          )
+      )
+    );
+  }, [tree]);
 
-    await invoke("create_file", { path: fullPath });
-
-    setFileName("");
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    await onCreate(createType, name.trim());
+    setName("");
     setCreating(false);
-
-    refresh();
   };
 
   return (
-    <div className="w-64 border-r border-zinc-800 p-3 flex flex-col">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-sm text-zinc-400">Files</h2>
-
-        <button
-          className="text-xs text-zinc-500 hover:text-white"
-          onClick={() => setCreating(true)}
+    <div className="relative flex h-full w-72 flex-col gap-4 border-r border-white/5 bg-[#0f0f10]/95 px-4 py-4 text-[13px] text-zinc-100 shadow-[1px_0_0_rgba(255,255,255,0.04)]">
+      <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_10%_20%,#1a1a1a,transparent_55%)] opacity-70" />
+      <div className="relative flex items-center justify-between rounded-xl border border-white/5 bg-white/5 px-3 py-2.5">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Workspace
+          </p>
+          <p className="text-sm font-semibold text-zinc-100">{vaultName}</p>
+        </div>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-8 w-8 rounded-full bg-white/5 text-zinc-200 hover:bg-white/10"
+          onClick={refresh}
         >
-          +
-        </button>
+          <Lightning weight="bold" className="size-4" />
+        </Button>
       </div>
 
-      {/* Inline create input */}
+      <div className="relative space-y-1">
+        {navItems.map((item) => (
+          <Button
+            key={item.label}
+            variant="ghost"
+            className="h-9 w-full justify-start gap-2 rounded-lg bg-transparent px-2 text-zinc-300 hover:bg-white/5 hover:text-white"
+          >
+            <item.icon className="size-4 text-zinc-500" weight="regular" />
+            <span className="text-[13px]">{item.label}</span>
+          </Button>
+        ))}
+      </div>
+
+      <div className="relative space-y-2 rounded-2xl border border-white/5 bg-[#0d0d10] px-3 py-3 shadow-inner shadow-black/20">
+        <div className="flex items-center justify-between text-[12px] text-zinc-400">
+          <span className="flex items-center gap-1 font-semibold uppercase tracking-[0.08em] text-zinc-400">
+            <HashStraight className="size-3" weight="bold" />
+            Tags
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {derivedTags.map((tag) => (
+            <span
+              key={tag}
+              className="rounded-full bg-white/5 px-2 py-1 text-[11px] text-zinc-300 transition hover:bg-white/10"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative flex items-center justify-between">
+        <div className="flex flex-col">
+          <p className="text-[12px] uppercase tracking-[0.08em] text-zinc-500">
+            Vault
+          </p>
+          <p className="text-[11px] text-zinc-500">Create files or folders</p>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 rounded-lg border border-white/5 bg-white/5 px-2 text-[12px] text-zinc-200 hover:bg-white/10"
+          onClick={() => setCreating((v) => !v)}
+        >
+          + New
+        </Button>
+      </div>
+
       {creating && (
-        <input
-          autoFocus
-          value={fileName}
-          onChange={(e) => setFileName(e.target.value)}
-          className="mb-2 px-2 py-1 text-sm bg-zinc-900 border border-zinc-700 rounded outline-none"
-          placeholder="file name..."
-          onKeyDown={(e) => {
-            if (e.key === "Enter") createFile();
-            if (e.key === "Escape") {
-              setCreating(false);
-              setFileName("");
-            }
-          }}
-          onBlur={() => {
-            setCreating(false);
-            setFileName("");
-          }}
-        />
+        <div className="relative space-y-2 rounded-xl border border-white/5 bg-white/5 p-3">
+          <div className="flex items-center gap-2 text-[12px] text-zinc-400">
+            <span>Type</span>
+            <div className="flex gap-1">
+              {(["file", "folder"] as CreateType[]).map((type) => (
+                <Button
+                  key={type}
+                  size="sm"
+                  variant={createType === type ? "secondary" : "ghost"}
+                  className={cn(
+                    "h-7 rounded-md px-2 text-[12px]",
+                    createType === type
+                      ? "bg-white/20 text-zinc-100"
+                      : "text-zinc-400 hover:bg-white/10"
+                  )}
+                  onClick={() => setCreateType(type)}
+                >
+                  {type === "file" ? "Note" : "Folder"}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <Input
+            autoFocus
+            value={name}
+            placeholder={createType === "file" ? "New note name" : "Folder name"}
+            className="h-9 border-white/10 bg-[#0b0b0c] text-[13px] placeholder:text-zinc-600"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleCreate();
+              if (e.key === "Escape") {
+                setCreating(false);
+                setName("");
+              }
+            }}
+          />
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-[12px] text-zinc-400"
+              onClick={() => {
+                setCreating(false);
+                setName("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 bg-white/10 text-[12px] text-white hover:bg-white/15"
+              onClick={handleCreate}
+            >
+              Create
+            </Button>
+          </div>
+        </div>
       )}
 
-      {/* Tree */}
-      <Tree nodes={tree} onOpen={onOpen} />
+      <ScrollArea className="relative -m-2 h-full px-2">
+        <div className="space-y-2 pb-8">
+          <Tree nodes={tree} onOpen={onOpen} activePath={activeFile} />
+        </div>
+      </ScrollArea>
     </div>
   );
 }
