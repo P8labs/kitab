@@ -4,17 +4,20 @@
   "version": "0.1.0",
   "identifier": "in.p8labs.kitab",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "trunk serve",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
+    "beforeBuildCommand": "trunk build",
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "kitab",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "transparent": true,
+        "decorations": false
       }
     ],
     "security": {
