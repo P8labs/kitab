@@ -1,5 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ArrowsSplitIcon, CodeIcon, EyeIcon } from "@phosphor-icons/react";
+import { useMemo, useRef, useState } from "react";
 import {
   Add01Icon,
   ArrowDown01Icon,
@@ -25,6 +27,9 @@ type HomeEditorWorkspaceProps = {
   onOpenFile: (path: string) => void;
   onCloseTab: (path: string) => void;
   onStartCreate: () => void;
+  linkedNoteTitles: string[];
+  resolveLinkedNote: (title: string) => string | null;
+  onOpenLinkedNote: (title: string) => void;
   setEditorMode: (mode: EditorMode) => void;
   setBottomVisible: (visible: boolean) => void;
   setBottomTab: (tab: BottomTab) => void;
@@ -37,6 +42,55 @@ const bottomTabs: Array<[BottomTab, string]> = [
   ["backlinks", "Backlinks"],
   ["meta", "Metadata"],
 ];
+
+const WIKI_LINK_PREFIX = "/__kitab-note__/";
+
+const modeMeta: Record<EditorMode, { label: string; icon: typeof CodeIcon }> = {
+  source: {
+    label: "Source",
+    icon: CodeIcon,
+  },
+  preview: {
+    label: "Preview",
+    icon: EyeIcon,
+  },
+  live: {
+    label: "Live",
+    icon: ArrowsSplitIcon,
+  },
+};
+
+const wikilinkToMarkdownLink = (value: string) =>
+  value.replace(
+    /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+    (_, rawTarget, rawLabel) => {
+      const target = rawTarget.trim();
+      const label = (rawLabel || rawTarget).trim();
+      return `[${label}](${WIKI_LINK_PREFIX}${encodeURIComponent(target)})`;
+    },
+  );
+
+const getWikiLinkQuery = (text: string, caret: number) => {
+  const beforeCaret = text.slice(0, caret);
+  const openAt = beforeCaret.lastIndexOf("[[");
+  if (openAt < 0) return null;
+
+  const lastCloseAt = beforeCaret.lastIndexOf("]]");
+  if (lastCloseAt > openAt) return null;
+
+  const query = beforeCaret.slice(openAt + 2);
+  if (query.includes("\n") || query.includes("[") || query.includes("]")) {
+    return null;
+  }
+
+  if (query.includes("|")) return null;
+
+  return {
+    start: openAt + 2,
+    end: caret,
+    query,
+  };
+};
 
 export function HomeEditorWorkspace({
   tabs,
@@ -52,11 +106,106 @@ export function HomeEditorWorkspace({
   onOpenFile,
   onCloseTab,
   onStartCreate,
+  linkedNoteTitles,
+  resolveLinkedNote,
+  onOpenLinkedNote,
   setEditorMode,
   setBottomVisible,
   setBottomTab,
   onContentChange,
 }: HomeEditorWorkspaceProps) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+
+  const wikiLinkQuery = useMemo(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return null;
+    return getWikiLinkQuery(currentContent, textarea.selectionStart ?? 0);
+  }, [currentContent]);
+
+  const noteSuggestions = useMemo(() => {
+    if (!wikiLinkQuery) return [];
+    const lookup = wikiLinkQuery.query.trim().toLowerCase();
+
+    const ranked = linkedNoteTitles
+      .filter((title) => {
+        if (!lookup) return true;
+        return title.toLowerCase().includes(lookup);
+      })
+      .sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aStarts = lookup ? aLower.startsWith(lookup) : true;
+        const bStarts = lookup ? bLower.startsWith(lookup) : true;
+        if (aStarts !== bStarts) return aStarts ? -1 : 1;
+        return a.localeCompare(b, undefined, { sensitivity: "base" });
+      });
+
+    return ranked.slice(0, 8);
+  }, [linkedNoteTitles, wikiLinkQuery]);
+
+  const applySuggestion = (title: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const caret = textarea.selectionStart ?? 0;
+    const query = getWikiLinkQuery(currentContent, caret);
+    if (!query) return;
+
+    const hasClosing = currentContent.slice(query.end, query.end + 2) === "]]";
+    const insertion = `${title}${hasClosing ? "" : "]]"}`;
+    const nextValue =
+      currentContent.slice(0, query.start) +
+      insertion +
+      currentContent.slice(query.end);
+
+    onContentChange(nextValue);
+    setActiveSuggestionIndex(0);
+
+    const nextCaret = query.start + insertion.length;
+    requestAnimationFrame(() => {
+      const target = textareaRef.current;
+      if (!target) return;
+      target.focus();
+      target.setSelectionRange(nextCaret, nextCaret);
+    });
+  };
+
+  const onTextareaKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (!noteSuggestions.length) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveSuggestionIndex((prev) => (prev + 1) % noteSuggestions.length);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveSuggestionIndex(
+        (prev) => (prev - 1 + noteSuggestions.length) % noteSuggestions.length,
+      );
+      return;
+    }
+
+    if (event.key === "Enter" || event.key === "Tab") {
+      event.preventDefault();
+      applySuggestion(noteSuggestions[activeSuggestionIndex]);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setActiveSuggestionIndex(0);
+    }
+  };
+
+  const markdownValue = wikilinkToMarkdownLink(
+    currentContent || "_No content yet._",
+  );
+
   return (
     <>
       <div className="border-border flex h-8 items-end border-b bg-surface-panel px-1">
@@ -121,13 +270,17 @@ export function HomeEditorWorkspace({
               type="button"
               onClick={() => setEditorMode(mode)}
               className={cn(
-                "h-6 rounded-[4px] px-2 text-[11px] transition-colors",
+                "flex h-6 items-center gap-1.5 rounded-[4px] px-2 text-[11px] transition-colors",
                 editorMode === mode
                   ? "bg-surface-active text-text-primary"
                   : "text-text-muted hover:bg-surface-hover hover:text-text-primary",
               )}
             >
-              {mode}
+              {(() => {
+                const Icon = modeMeta[mode].icon;
+                return <Icon className="size-3.5" />;
+              })()}
+              <span>{modeMeta[mode].label}</span>
             </button>
           ))}
           <button
@@ -148,21 +301,106 @@ export function HomeEditorWorkspace({
         <>
           <div className="flex min-h-0 flex-1 overflow-hidden">
             {(editorMode === "source" || editorMode === "live") && (
-              <textarea
-                value={currentContent}
-                onChange={(event) => onContentChange(event.target.value)}
+              <div
                 className={cn(
-                  "bg-surface-panel text-text-primary h-full flex-1 resize-none px-5 py-4 text-[14px] leading-[1.7] font-medium outline-none",
+                  "relative h-full flex-1",
                   editorMode === "live" && "border-border border-r",
                 )}
-                placeholder="Start writing in Markdown..."
-              />
+              >
+                <textarea
+                  ref={textareaRef}
+                  value={currentContent}
+                  onChange={(event) => onContentChange(event.target.value)}
+                  onClick={() => setActiveSuggestionIndex(0)}
+                  onKeyDown={onTextareaKeyDown}
+                  className="bg-surface-panel text-text-primary h-full w-full resize-none px-5 py-4 text-[14px] leading-[1.7] font-medium outline-none"
+                  placeholder="Start writing in Markdown..."
+                />
+
+                {noteSuggestions.length > 0 && wikiLinkQuery && (
+                  <div className="border-border absolute right-3 bottom-3 z-20 w-64 rounded-[8px] border bg-surface-sidebar p-1 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+                    <p className="px-2 py-1 text-[10px] tracking-[0.06em] text-text-muted uppercase">
+                      Link note
+                    </p>
+                    <div className="max-h-44 overflow-auto">
+                      {noteSuggestions.map((title, index) => (
+                        <button
+                          key={title}
+                          type="button"
+                          className={cn(
+                            "flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px]",
+                            index === activeSuggestionIndex
+                              ? "bg-surface-active text-text-primary"
+                              : "text-text-muted hover:bg-surface-hover hover:text-text-primary",
+                          )}
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            applySuggestion(title);
+                          }}
+                        >
+                          <span className="truncate">{title}</span>
+                          <span className="text-[10px] opacity-65">[[ ]]</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {(editorMode === "preview" || editorMode === "live") && (
               <div className="markdown-preview h-full flex-1 overflow-auto px-5 py-4">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {currentContent || "_No content yet._"}
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    a: ({ href, children, ...props }: any) => {
+                      if (href?.startsWith(WIKI_LINK_PREFIX)) {
+                        const linkedTitle = decodeURIComponent(
+                          href.slice(WIKI_LINK_PREFIX.length),
+                        );
+                        const linkedPath = resolveLinkedNote(linkedTitle);
+
+                        return (
+                          <a
+                            href="#"
+                            className={cn(
+                              "font-medium underline underline-offset-2 transition-colors",
+                              linkedPath
+                                ? "text-text-primary hover:text-primary"
+                                : "cursor-not-allowed text-text-muted",
+                            )}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              if (!linkedPath) return;
+                              onOpenLinkedNote(linkedTitle);
+                            }}
+                            title={
+                              linkedPath
+                                ? `Open note: ${linkedTitle}`
+                                : `Note not found: ${linkedTitle}`
+                            }
+                          >
+                            {children}
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <a
+                          href={href}
+                          className="text-primary underline underline-offset-2"
+                          target="_blank"
+                          rel="noreferrer"
+                          {...props}
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
+                  }}
+                >
+                  {markdownValue}
                 </ReactMarkdown>
               </div>
             )}

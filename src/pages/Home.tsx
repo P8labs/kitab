@@ -546,6 +546,64 @@ export default function Home() {
       .map((tab) => stripMarkdownExt(tab.split(/[/\\]/).pop() || tab));
   }, [activeFile, tabs, fileContent]);
 
+  const notePathByTitle = useMemo(() => {
+    const map = new Map<string, string>();
+
+    discoveredFiles.forEach((node) => {
+      const key = stripMarkdownExt(node.name).trim().toLowerCase();
+      if (key && !map.has(key)) {
+        map.set(key, node.path);
+      }
+    });
+
+    tabs.forEach((tabPath) => {
+      const name = tabPath.split(/[/\\]/).pop() || tabPath;
+      const key = stripMarkdownExt(name).trim().toLowerCase();
+      if (key && !map.has(key)) {
+        map.set(key, tabPath);
+      }
+    });
+
+    return map;
+  }, [discoveredFiles, tabs]);
+
+  const linkedNoteTitles = useMemo(() => {
+    const seen = new Set<string>();
+    const titles: string[] = [];
+
+    discoveredFiles.forEach((node) => {
+      const original = stripMarkdownExt(node.name).trim();
+      const key = original.toLowerCase();
+      if (!original || seen.has(key)) return;
+      seen.add(key);
+      titles.push(original);
+    });
+
+    tabs.forEach((tabPath) => {
+      const fileName = tabPath.split(/[/\\]/).pop() || tabPath;
+      const original = stripMarkdownExt(fileName).trim();
+      const key = original.toLowerCase();
+      if (!original || seen.has(key)) return;
+      seen.add(key);
+      titles.push(original);
+    });
+
+    return titles.sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }),
+    );
+  }, [discoveredFiles, tabs]);
+
+  const resolveLinkedNote = (title: string) => {
+    const key = title.trim().toLowerCase();
+    return notePathByTitle.get(key) ?? null;
+  };
+
+  const openLinkedNote = (title: string) => {
+    const path = resolveLinkedNote(title);
+    if (!path) return;
+    void openFile(path);
+  };
+
   const saveLabel =
     saveState === "saving"
       ? "Saving..."
@@ -668,6 +726,9 @@ export default function Home() {
                 onOpenFile={openFile}
                 onCloseTab={closeTab}
                 onStartCreate={startRootFileCreate}
+                linkedNoteTitles={linkedNoteTitles}
+                resolveLinkedNote={resolveLinkedNote}
+                onOpenLinkedNote={openLinkedNote}
                 setEditorMode={setEditorMode}
                 setBottomVisible={setBottomVisible}
                 setBottomTab={setBottomTab}
