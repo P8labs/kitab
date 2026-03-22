@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "misty-app",
+  "productName": "kitab",
   "version": "0.1.0",
-  "identifier": "in.p8labs.misty",
+  "identifier": "in.p8labs.kitab",
   "build": {
     "beforeDevCommand": "trunk serve",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "misty-app",
+        "title": "kitab",
         "width": 800,
         "height": 600,
         "transparent": true,

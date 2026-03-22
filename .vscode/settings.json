@@ -15,5 +15,11 @@
     "comments": "on",
     "strings": true
   },
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.rustfmt.overrideCommand": [
+    "leptosfmt",
+    "--stdin",
+    "--rustfmt"
+  ],
   "css.validate": false
 }

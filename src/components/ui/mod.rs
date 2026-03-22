@@ -7,3 +7,4 @@ pub mod separator;
 pub mod dropdown_menu;
 pub mod theme_toggle;
 pub mod menubar;
+pub mod input;

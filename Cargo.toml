@@ -1,5 +1,5 @@
 [package]
-name = "misty-app-ui"
+name = "kitab-ui"
 version = "0.1.0"
 edition = "2021"
 
@@ -24,6 +24,9 @@ strum = { version = "0.28", features = ["derive"] }
 web-sys = "0.3.91"
 leptos-use = "0.18.3"
 leptos_darkmode = "0.4.0"
+serde_json = "1"
+
+shared = { path = "./shared" }
 
 
 
@@ -31,5 +34,5 @@ leptos_darkmode = "0.4.0"
 tailwind-input-file = "style/tailwind.css"
 
 [workspace]
-members = ["src-tauri"]
+members = ["shared","src-tauri"]
 
