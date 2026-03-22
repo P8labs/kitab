@@ -1,11 +1,21 @@
-import "./App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
+import Home from "./pages/Home";
+import Onboard from "./pages/Onboard";
+import GateKeeper from "./middleware/GateKeeper";
+import { AppProvider } from "./state/app";
+
+export default function App() {
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
-    </main>
+    <AppProvider>
+      <BrowserRouter>
+        <GateKeeper>
+          <Routes>
+            <Route path="/" element={<Onboard />} />
+            <Route path="/onboard" element={<Onboard />} />
+          </Routes>
+        </GateKeeper>
+      </BrowserRouter>
+    </AppProvider>
   );
 }
-
-export default App;
