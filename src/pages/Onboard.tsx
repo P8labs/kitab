@@ -5,7 +5,6 @@ import { open } from "@tauri-apps/plugin-dialog";
 
 import {
   Add01Icon,
-  ArrowRight01Icon,
   Delete02Icon,
   FolderOpenIcon,
   MapPinIcon,
@@ -96,8 +95,8 @@ export default function Onboard() {
       <Titlebar title="Kitab - Vault Setup" compact />
 
       <div className="flex h-[calc(100vh-2rem)] items-center justify-center px-4 py-6">
-        <div className="grid w-full max-w-4xl grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-[6px] border border-border bg-surface-panel">
-          <section className="border-r border-border p-4">
+        <div className="grid w-full max-w-4xl grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-[6px] border border-black/8 bg-surface-panel shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-md dark:border-white/20 dark:shadow-[0_12px_48px_rgba(0,0,0,0.15)] dark:backdrop-blur-xl">
+          <section className="border-r border-black/8 p-4 dark:border-white/20">
             <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-text-muted">
               <HIcon icon={Add01Icon} size={16} />
               Create vault
@@ -111,7 +110,7 @@ export default function Onboard() {
                 <Input
                   placeholder="notes"
                   value={name}
-                  className="h-8"
+                  className="h-8 border-black/8 bg-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.08)] placeholder:text-text-muted/60 dark:border-white/20 dark:bg-white/5 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)] dark:placeholder:text-text-muted/40"
                   onChange={(event) => setName(event.target.value)}
                 />
               </div>
@@ -120,14 +119,14 @@ export default function Onboard() {
                 <Label className="text-[11px] text-text-muted">Location</Label>
                 <div className="flex items-center gap-1.5">
                   <Input
-                    className="h-8 flex-1"
+                    className="h-8 flex-1 border-black/8 bg-white/60 shadow-[0_2px_8px_rgba(0,0,0,0.08)] placeholder:text-text-muted/60 dark:border-white/20 dark:bg-white/5 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)] dark:placeholder:text-text-muted/40"
                     value={path ?? ""}
                     placeholder="Choose a folder"
                     readOnly
                   />
                   <Button
                     variant="outline"
-                    className="h-8 px-2 text-[12px]"
+                    className="h-8 border-black/12 px-2 text-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:border-white/45 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)]"
                     onClick={pickFolder}
                   >
                     Browse
@@ -136,7 +135,7 @@ export default function Onboard() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-y border-border py-2 text-text-muted">
+            <div className="mt-3 flex items-center justify-between border-y border-black/8 py-2 text-text-muted dark:border-white/20">
               <div className="flex items-center gap-1">
                 <HIcon icon={MapPinIcon} size={14} />
                 <span>{path ? "Path selected" : "Waiting for location"}</span>
@@ -151,14 +150,14 @@ export default function Onboard() {
               <Button
                 disabled={!name || !path || loading}
                 onClick={createVault}
-                className="h-8 px-3 text-[12px]"
+                className="h-8 px-3 text-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)]"
               >
                 {loading ? "Creating..." : "Create vault"}
               </Button>
               <Button
                 variant="ghost"
                 onClick={openExistingVault}
-                className="h-8 px-2 text-[12px]"
+                className="h-8 px-2 text-[12px] hover:bg-surface-hover dark:hover:bg-surface-hover"
               >
                 <HIcon icon={FolderOpenIcon} className="mr-1" size={14} />
                 Open existing
@@ -166,58 +165,47 @@ export default function Onboard() {
             </div>
           </section>
 
-          <aside className="bg-surface-sidebar p-4">
+          <aside className="bg-surface-sidebar/80 p-4 backdrop-blur-md dark:bg-surface-sidebar/50 dark:backdrop-blur-xl">
             <div className="mb-2 uppercase tracking-[0.06em] text-text-muted">
               Recent vaults
             </div>
 
             <div className="space-y-1.5">
               {recent.length === 0 && (
-                <div className="rounded-[5px] border border-border bg-surface-panel px-2 py-1.5 text-[12px] text-text-muted">
+                <div className="rounded-[5px] border border-black/8 bg-surface-panel/60 px-2 py-1.5 text-[12px] text-text-muted shadow-[0_2px_8px_rgba(0,0,0,0.08)] backdrop-blur-sm dark:border-white/20 dark:bg-surface-panel/40 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)]">
                   No recent vaults
                 </div>
               )}
 
               {recent.map((vault) => (
-                <div
+                <button
                   key={vault.path}
-                  className="w-full rounded-[5px] border border-border bg-surface-panel px-2 py-1.5 text-left text-[12px]"
+                  type="button"
+                  onClick={() => openVault(vault)}
+                  className="hover:cursor-pointer w-full rounded-[5px] border border-black/8 bg-surface-panel/60 px-2 py-1.5 text-left text-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] backdrop-blur-sm dark:border-white/20 dark:bg-surface-panel/40 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)]"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => openVault(vault)}
-                      className="min-w-0 flex-1 truncate text-left font-medium text-text-primary hover:text-white"
-                    >
+                    <div className="min-w-0 flex-1 truncate text-left font-medium text-text-primary hover:text-primary">
                       {vault.name}
-                    </button>
+                    </div>
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
-                        className="tree-action"
+                        className="tree-action z-30"
                         title="Remove from recents"
-                        onClick={() => removeVault(vault.path)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeVault(vault.path);
+                        }}
                       >
                         <HIcon icon={Delete02Icon} size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className="tree-action"
-                        title="Open vault"
-                        onClick={() => openVault(vault)}
-                      >
-                        <HIcon
-                          icon={ArrowRight01Icon}
-                          className="text-text-muted"
-                          size={14}
-                        />
                       </button>
                     </div>
                   </div>
                   <p className="truncate text-[11px] text-text-muted">
                     {vault.path}
                   </p>
-                </div>
+                </button>
               ))}
             </div>
           </aside>

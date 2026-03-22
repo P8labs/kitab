@@ -568,7 +568,7 @@ export default function Home() {
       />
 
       <div className="flex h-[calc(100vh-2.25rem)] overflow-hidden">
-        <aside className="border-border bg-surface-sidebar-deep flex w-12 flex-col items-center gap-1.5 border-r px-1.5 py-2">
+        <aside className="border-border bg-surface-sidebar-deep/10! flex w-12 flex-col items-center gap-1.5 border-r px-1.5 py-2">
           <button
             type="button"
             title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -598,9 +598,9 @@ export default function Home() {
           ))}
         </aside>
 
-        <section className="bg-app-base flex min-w-0 flex-1 overflow-hidden">
+        <section className="bg-app-base/10! flex min-w-0 flex-1 overflow-hidden">
           {!sidebarCollapsed && (
-            <section className="border-border bg-surface-sidebar flex h-full w-72.5 max-w-85 min-w-62.5 flex-col border-r">
+            <section className="border-border bg-surface-sidebar/10! flex h-full w-72.5 max-w-85 min-w-62.5 flex-col border-r">
               <HomeSidebarContent
                 leftView={leftView}
                 vaultName={vaultName}
@@ -648,7 +648,7 @@ export default function Home() {
                     ? `${systemInfo.platform} / ${systemInfo.osType} ${systemInfo.version} (${systemInfo.arch})`
                     : "loading..."
                 }
-                githubUrl="https://github.com/p8labs"
+                githubUrl="https://github.com/p8labs/kitab"
                 aboutLabel="Made by P8labs"
                 onCloseCurrentVault={closeCurrentVault}
                 onGoToOnboard={goToOnboard}

@@ -77,8 +77,8 @@ export function HomeSettingsView({
   }, [recordingAction, onShortcutChange]);
 
   return (
-    <div className="flex flex-1 justify-center overflow-auto px-6 py-8">
-      <div className="w-full max-w-4xl">
+    <div className="relative flex min-w-0 flex-1 justify-start overflow-auto px-3 py- sm:px-6 sm:pt-8 h-full">
+      <div className="flex flex-col w-full min-w-0 max-w-4xl h-fit px-4 py-4 sm:px-6 sm:py-6 dark:border-white/10">
         <div className="mb-8">
           <p className="text-[11px] tracking-[0.08em] text-text-muted uppercase">
             Settings
@@ -91,7 +91,7 @@ export function HomeSettingsView({
           </p>
         </div>
 
-        <section className="border-border/80 border-t pt-5">
+        <section className="border-border/75 border-t pt-5">
           <p className="mb-3 text-[11px] tracking-[0.06em] text-text-muted uppercase">
             Appearance
           </p>
@@ -101,10 +101,10 @@ export function HomeSettingsView({
                 key={mode}
                 type="button"
                 className={cn(
-                  "h-9 rounded-full px-4 text-[12px] capitalize transition-colors",
+                  "h-9 rounded-full border border-black/12 px-4 text-[12px] capitalize shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-colors dark:border-white/45 dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)]",
                   themeMode === mode
                     ? "bg-surface-active text-text-primary"
-                    : "bg-surface-sidebar text-text-muted hover:bg-surface-hover",
+                    : "bg-surface-sidebar text-text-primary hover:bg-surface-hover dark:bg-surface-sidebar/70 dark:text-text-muted dark:hover:bg-surface-hover",
                 )}
                 onClick={() => setThemeMode(mode)}
               >
@@ -114,8 +114,8 @@ export function HomeSettingsView({
           </div>
         </section>
 
-        <section className="border-border/80 mt-8 border-t pt-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
+        <section className="border-border/75 mt-8 border-t pt-5">
+          <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row">
             <div>
               <p className="text-[11px] tracking-[0.06em] text-text-muted uppercase">
                 Keyboard shortcuts
@@ -126,7 +126,7 @@ export function HomeSettingsView({
             </div>
             <button
               type="button"
-              className="rounded-full bg-surface-sidebar px-3 py-1.5 text-[11px] text-text-muted hover:bg-surface-hover"
+              className="rounded-full border border-black/12 bg-surface-sidebar px-3 py-1.5 text-[11px] text-text-primary shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:bg-surface-hover dark:border-white/45 dark:bg-surface-sidebar/70 dark:text-text-muted dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)] dark:hover:bg-surface-hover"
               onClick={onShortcutReset}
             >
               Reset defaults
@@ -137,7 +137,7 @@ export function HomeSettingsView({
             {shortcutActions.map((action) => (
               <div
                 key={action}
-                className="flex items-center justify-between gap-3 rounded-[8px] px-2 py-2 hover:bg-surface-sidebar"
+                className="flex flex-col items-start gap-2 rounded-xl border border-black/6 px-2 py-2 transition-all duration-150 hover:border-black/16 hover:bg-black/4 sm:flex-row sm:items-center sm:justify-between dark:border-transparent dark:hover:border-white/35 dark:hover:bg-surface-sidebar/75 dark:hover:shadow-[0_12px_26px_rgba(20,20,20,0.06)]"
               >
                 <div>
                   <p className="text-[12px] font-medium text-text-primary">
@@ -148,16 +148,16 @@ export function HomeSettingsView({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="min-w-24 rounded-full bg-surface-panel px-3 py-1 text-center text-[11px] text-text-primary">
+                <div className="flex w-full flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end">
+                  <span className="min-w-20 rounded-full border border-black/12 bg-surface-sidebar px-3 py-1 text-center text-[11px] text-text-primary shadow-[0_2px_6px_rgba(0,0,0,0.06)] dark:border-white/45 dark:bg-surface-panel/70 dark:shadow-none">
                     {shortcuts[action]}
                   </span>
                   <button
                     type="button"
                     className={cn(
-                      "rounded-full bg-surface-sidebar px-3 py-1.5 text-[11px] text-text-muted hover:bg-surface-hover",
+                      "rounded-full border border-black/12 bg-surface-sidebar px-3 py-1.5 text-[11px] text-text-primary shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:bg-surface-hover dark:border-white/45 dark:bg-surface-sidebar/70 dark:text-text-muted dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)] dark:hover:bg-surface-hover",
                       recordingAction === action &&
-                        "bg-surface-active text-text-primary",
+                        "bg-surface-active text-text-primary shadow-[0_4px_12px_rgba(0,0,0,0.12)]",
                     )}
                     onClick={() =>
                       setRecordingAction((current) =>
@@ -173,18 +173,18 @@ export function HomeSettingsView({
           </div>
         </section>
 
-        <section className="border-border/80 mt-8 border-t pt-5">
+        <section className="border-border/75 mt-8 border-t pt-5">
           <p className="mb-3 text-[11px] tracking-[0.06em] text-text-muted uppercase">
             Application
           </p>
           <div className="grid gap-y-2 text-[12px] sm:grid-cols-[140px_1fr] sm:items-center">
             <p className="text-text-muted">Version</p>
-            <p className="text-text-primary">{appVersion}</p>
+            <p className="break-all text-text-primary">{appVersion}</p>
 
             <p className="text-text-muted">OS</p>
-            <p className="text-text-primary">{osSummary}</p>
+            <p className="wrap-break-word text-text-primary">{osSummary}</p>
 
-            <p className="text-text-muted">GitHub</p>
+            {/* <p className="text-text-muted">GitHub</p>
             <p className="text-text-muted">
               <a
                 className="text-text-primary underline underline-offset-3"
@@ -194,34 +194,10 @@ export function HomeSettingsView({
               >
                 {githubUrl}
               </a>
-            </p>
+            </p> */}
 
             <p className="text-text-muted">About</p>
-            <p className="text-text-primary">{aboutLabel}</p>
-          </div>
-        </section>
-
-        <section className="border-border/80 mt-8 border-t pt-5">
-          <p className="mb-3 text-[11px] tracking-[0.06em] text-text-muted uppercase">
-            Vault management
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button
-              type="button"
-              className="flex h-10 items-center gap-2 rounded-full bg-surface-sidebar px-4 text-left text-[12px] text-text-muted hover:bg-surface-hover"
-              onClick={onCloseCurrentVault}
-            >
-              <HIcon icon={ShutDownIcon} size={16} />
-              Close current vault
-            </button>
-            <button
-              type="button"
-              className="flex h-10 items-center gap-2 rounded-full bg-surface-sidebar px-4 text-left text-[12px] text-text-muted hover:bg-surface-hover"
-              onClick={onGoToOnboard}
-            >
-              <HIcon icon={Add01Icon} size={16} />
-              Open or create another vault
-            </button>
+            <p className="wrap-break-word text-text-primary">{aboutLabel}</p>
           </div>
         </section>
       </div>
