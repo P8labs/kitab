@@ -87,6 +87,8 @@ export function HomeSidebarContent({
   onCloseCurrentVault,
   onGoToOnboard,
 }: HomeSidebarContentProps) {
+  const normalizedQuery = query.trim().toLowerCase();
+
   const renderCreateRow = (parentPath: string | null, depth: number) => {
     if (!draftCreate || draftCreate.parentPath !== parentPath) return null;
 
@@ -133,9 +135,9 @@ export function HomeSidebarContent({
     parentPath: string | null,
     depth = 0,
   ): ReactNode => {
-    const filtered = query.trim()
+    const filtered = normalizedQuery
       ? nodes.filter((node) =>
-          node.name.toLowerCase().includes(query.trim().toLowerCase()),
+          node.name.toLowerCase().includes(normalizedQuery),
         )
       : nodes;
 

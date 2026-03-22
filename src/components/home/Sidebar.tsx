@@ -1,16 +1,17 @@
 import { useMemo, useState } from "react";
 import {
-  BellSimple,
-  GearSix,
-  HashStraight,
-  Lightning,
-  NotePencil,
-  TagSimple,
-  TrashSimple,
-} from "@phosphor-icons/react";
+  Delete01Icon,
+  File01Icon,
+  HashtagIcon,
+  Notification01Icon,
+  RefreshIcon,
+  Settings01Icon,
+  Tag01Icon,
+} from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { HIcon } from "@/components/ui/hicon";
 import { cn } from "@/lib/utils";
 import { Tree } from "./Tree";
 
@@ -23,11 +24,11 @@ type FileNode = {
 type CreateType = "file" | "folder";
 
 const navItems = [
-  { label: "All Notes", icon: NotePencil },
-  { label: "Notifications", icon: BellSimple },
-  { label: "Settings", icon: GearSix },
-  { label: "Tags", icon: TagSimple },
-  { label: "Trash", icon: TrashSimple },
+  { label: "All Notes", icon: File01Icon },
+  { label: "Notifications", icon: Notification01Icon },
+  { label: "Settings", icon: Settings01Icon },
+  { label: "Tags", icon: Tag01Icon },
+  { label: "Trash", icon: Delete01Icon },
 ];
 
 export function Sidebar({
@@ -62,13 +63,12 @@ export function Sidebar({
         tree
           .filter((node) => !node.is_dir)
           .slice(0, 8)
-          .map((node) =>
-            node.name
-              .replace(".md", "")
-              .split(/\W+/)[0]
-              .toLowerCase() || "note"
-          )
-      )
+          .map(
+            (node) =>
+              node.name.replace(".md", "").split(/\W+/)[0].toLowerCase() ||
+              "note",
+          ),
+      ),
     );
   }, [tree]);
 
@@ -95,7 +95,7 @@ export function Sidebar({
           className="h-8 w-8 rounded-full bg-white/5 text-zinc-200 hover:bg-white/10"
           onClick={refresh}
         >
-          <Lightning weight="bold" className="size-4" />
+          <HIcon icon={RefreshIcon} size={16} />
         </Button>
       </div>
 
@@ -106,7 +106,7 @@ export function Sidebar({
             variant="ghost"
             className="h-9 w-full justify-start gap-2 rounded-lg bg-transparent px-2 text-zinc-300 hover:bg-white/5 hover:text-white"
           >
-            <item.icon className="size-4 text-zinc-500" weight="regular" />
+            <HIcon icon={item.icon} className="text-zinc-500" size={16} />
             <span className="text-[13px]">{item.label}</span>
           </Button>
         ))}
@@ -115,7 +115,7 @@ export function Sidebar({
       <div className="relative space-y-2 rounded-2xl border border-white/5 bg-[#0d0d10] px-3 py-3 shadow-inner shadow-black/20">
         <div className="flex items-center justify-between text-[12px] text-zinc-400">
           <span className="flex items-center gap-1 font-semibold uppercase tracking-[0.08em] text-zinc-400">
-            <HashStraight className="size-3" weight="bold" />
+            <HIcon icon={HashtagIcon} size={12} />
             Tags
           </span>
         </div>
@@ -162,7 +162,7 @@ export function Sidebar({
                     "h-7 rounded-md px-2 text-[12px]",
                     createType === type
                       ? "bg-white/20 text-zinc-100"
-                      : "text-zinc-400 hover:bg-white/10"
+                      : "text-zinc-400 hover:bg-white/10",
                   )}
                   onClick={() => setCreateType(type)}
                 >
@@ -174,7 +174,9 @@ export function Sidebar({
           <Input
             autoFocus
             value={name}
-            placeholder={createType === "file" ? "New note name" : "Folder name"}
+            placeholder={
+              createType === "file" ? "New note name" : "Folder name"
+            }
             className="h-9 border-white/10 bg-[#0b0b0c] text-[13px] placeholder:text-zinc-600"
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {

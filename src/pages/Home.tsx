@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "react-router-dom";
 import {
@@ -31,6 +31,11 @@ import {
   normalizeShortcut,
 } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
+
+type NoteEntry = {
+  title: string;
+  path: string;
+};
 
 const railItems: Array<{
   key: LeftView;
@@ -94,6 +99,7 @@ export default function Home() {
   const [activeFile, setActiveFile] = useState<string | null>(null);
   const [tabs, setTabs] = useState<string[]>([]);
   const [fileContent, setFileContent] = useState<Record<string, string>>({});
+  const [noteIndex, setNoteIndex] = useState<NoteEntry[]>([]);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   const [leftView, setLeftView] = useState<LeftView>("vault");
@@ -101,6 +107,7 @@ export default function Home() {
 
   const [query, setQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<FileNode[]>([]);
 
   const [draftCreate, setDraftCreate] = useState<DraftCreate | null>(null);
   const [draftRename, setDraftRename] = useState<DraftRename | null>(null);
@@ -108,12 +115,17 @@ export default function Home() {
   const [editorMode, setEditorMode] = useState<EditorMode>("live");
   const [saveState, setSaveState] = useState<SaveState>("idle");
 
-  const [bottomVisible, setBottomVisible] = useState(true);
+  const [bottomVisible, setBottomVisible] = useState(false);
   const [bottomTab, setBottomTab] = useState<BottomTab>("outline");
+  const [headings, setHeadings] = useState<
+    Array<{ level: number; text: string }>
+  >([]);
+  const [backlinks, setBacklinks] = useState<string[]>([]);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestContentRef = useRef<Record<string, string>>({});
   const lastSavedRef = useRef<Record<string, string>>({});
+  const deferredSearchTerm = useDeferredValue(searchTerm);
 
   const separator = useMemo(
     () => (vaultPath.includes("\\") ? "\\" : "/"),
@@ -137,15 +149,26 @@ export default function Home() {
     return sortNodes(res);
   };
 
+  const loadNoteIndex = async (path: string) => {
+    const notes = (await invoke("list_all_notes", {
+      path,
+    })) as NoteEntry[];
+    setNoteIndex(notes);
+  };
+
   const loadTree = async () => {
     const config: any = await invoke("get_config");
 
-    if (!config?.last_opened) return;
+    if (!config?.last_opened) {
+      setNoteIndex([]);
+      return;
+    }
     setVaultPath(config.last_opened);
     const folderParts = config.last_opened.split(/[/\\]/).filter(Boolean);
     setVaultName(folderParts[folderParts.length - 1] || "Vault");
 
     const res = await fetchDirectory(config.last_opened);
+    await loadNoteIndex(config.last_opened);
     setTree(res);
     setChildrenByPath({});
     setExpandedFolders(new Set());
@@ -383,6 +406,8 @@ export default function Home() {
       await openFile(fullPath);
     }
 
+    await loadNoteIndex(vaultPath);
+
     setDraftCreate(null);
   };
 
@@ -440,6 +465,7 @@ export default function Home() {
 
     setChildrenByPath({});
     await refreshDirectory(null);
+    await loadNoteIndex(vaultPath);
     setDraftRename(null);
   };
 
@@ -477,10 +503,13 @@ export default function Home() {
     } else {
       await refreshDirectory(parentPath);
     }
+
+    await loadNoteIndex(vaultPath);
   };
 
   const closeCurrentVault = async () => {
     await invoke("close_active_vault");
+    setNoteIndex([]);
     setHasVault(false);
     navigate("/onboard");
   };
@@ -489,100 +518,151 @@ export default function Home() {
     navigate("/onboard");
   };
 
-  const discoveredFiles = useMemo(() => {
-    const map = new Map<string, FileNode>();
+  useEffect(() => {
+    if (!vaultPath || leftView !== "search") {
+      return;
+    }
 
-    const walk = (nodes: FileNode[]) => {
-      nodes.forEach((node) => {
-        map.set(node.path, node);
-        if (node.is_dir) {
-          const children = childrenByPath[node.path];
-          if (children?.length) {
-            walk(children);
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const term = deferredSearchTerm.trim();
+
+          if (!term) {
+            const allNotes = noteIndex.map((note) => ({
+              name: `${note.title}.md`,
+              path: note.path,
+              is_dir: false,
+            }));
+            if (!cancelled) {
+              setSearchResults(allNotes);
+            }
+            return;
+          }
+
+          const matches = (await invoke("search_notes", {
+            path: vaultPath,
+            query: term,
+          })) as NoteEntry[];
+
+          if (!cancelled) {
+            setSearchResults(
+              matches.map((note) => ({
+                name: `${note.title}.md`,
+                path: note.path,
+                is_dir: false,
+              })),
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setSearchResults([]);
           }
         }
-      });
+      })();
+    }, 120);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
     };
+  }, [leftView, vaultPath, deferredSearchTerm, noteIndex]);
 
-    walk(tree);
-    return Array.from(map.values()).filter((node) => !node.is_dir);
-  }, [tree, childrenByPath]);
+  useEffect(() => {
+    if (!activeFile || !bottomVisible || bottomTab !== "outline") {
+      setHeadings([]);
+      return;
+    }
 
-  const searchResults = useMemo(() => {
-    const value = searchTerm.trim().toLowerCase();
-    if (!value) return discoveredFiles;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const items = (await invoke("parse_markdown_headings", {
+            content: currentContent,
+          })) as Array<{ level: number; text: string }>;
+          if (!cancelled) {
+            setHeadings(items);
+          }
+        } catch {
+          if (!cancelled) {
+            setHeadings([]);
+          }
+        }
+      })();
+    }, 120);
 
-    return discoveredFiles.filter((node) => {
-      const inName = node.name.toLowerCase().includes(value);
-      const inContent = (fileContent[node.path] || "")
-        .toLowerCase()
-        .includes(value);
-      return inName || inContent;
-    });
-  }, [searchTerm, discoveredFiles, fileContent]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [activeFile, currentContent, bottomVisible, bottomTab]);
 
-  const headings = useMemo(() => {
-    return currentContent
-      .split("\n")
-      .map((line) => {
-        const match = /^(#{1,6})\s+(.+)/.exec(line);
-        if (!match) return null;
-        return {
-          level: match[1].length,
-          text: match[2].trim(),
-        };
-      })
-      .filter((h): h is { level: number; text: string } => Boolean(h));
-  }, [currentContent]);
+  useEffect(() => {
+    if (
+      !activeFile ||
+      !vaultPath ||
+      !bottomVisible ||
+      bottomTab !== "backlinks"
+    ) {
+      setBacklinks([]);
+      return;
+    }
 
-  const backlinks = useMemo(() => {
-    if (!activeFile) return [];
+    let cancelled = false;
     const title = stripMarkdownExt(activeFile.split(/[/\\]/).pop() || "");
-    const marker = `[[${title}]]`;
+    const timer = setTimeout(() => {
+      void (async () => {
+        try {
+          const links = (await invoke("find_backlinks", {
+            path: vaultPath,
+            noteTitle: title,
+            activeFile,
+          })) as string[];
+          if (!cancelled) {
+            setBacklinks(links);
+          }
+        } catch {
+          if (!cancelled) {
+            setBacklinks([]);
+          }
+        }
+      })();
+    }, 180);
 
-    return tabs
-      .filter((tab) => tab !== activeFile)
-      .filter((tab) => (fileContent[tab] || "").includes(marker))
-      .map((tab) => stripMarkdownExt(tab.split(/[/\\]/).pop() || tab));
-  }, [activeFile, tabs, fileContent]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [activeFile, vaultPath, noteIndex, bottomVisible, bottomTab]);
 
   const notePathByTitle = useMemo(() => {
     const map = new Map<string, string>();
 
-    discoveredFiles.forEach((node) => {
-      const key = stripMarkdownExt(node.name).trim().toLowerCase();
+    noteIndex.forEach((node) => {
+      const key = node.title.trim().toLowerCase();
       if (key && !map.has(key)) {
         map.set(key, node.path);
       }
     });
 
-    tabs.forEach((tabPath) => {
-      const name = tabPath.split(/[/\\]/).pop() || tabPath;
-      const key = stripMarkdownExt(name).trim().toLowerCase();
-      if (key && !map.has(key)) {
-        map.set(key, tabPath);
-      }
-    });
-
     return map;
-  }, [discoveredFiles, tabs]);
+  }, [noteIndex]);
 
   const linkedNoteTitles = useMemo(() => {
+    const activeTitle = activeFile
+      ? stripMarkdownExt(activeFile.split(/[/\\]/).pop() || "")
+          .trim()
+          .toLowerCase()
+      : "";
     const seen = new Set<string>();
     const titles: string[] = [];
 
-    discoveredFiles.forEach((node) => {
-      const original = stripMarkdownExt(node.name).trim();
+    noteIndex.forEach((node) => {
+      const original = node.title.trim();
       const key = original.toLowerCase();
-      if (!original || seen.has(key)) return;
-      seen.add(key);
-      titles.push(original);
-    });
-
-    tabs.forEach((tabPath) => {
-      const fileName = tabPath.split(/[/\\]/).pop() || tabPath;
-      const original = stripMarkdownExt(fileName).trim();
-      const key = original.toLowerCase();
+      if (activeTitle && key === activeTitle) return;
       if (!original || seen.has(key)) return;
       seen.add(key);
       titles.push(original);
@@ -591,7 +671,7 @@ export default function Home() {
     return titles.sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: "base" }),
     );
-  }, [discoveredFiles, tabs]);
+  }, [noteIndex, activeFile]);
 
   const resolveLinkedNote = (title: string) => {
     const key = title.trim().toLowerCase();
@@ -706,10 +786,7 @@ export default function Home() {
                     ? `${systemInfo.platform} / ${systemInfo.osType} ${systemInfo.version} (${systemInfo.arch})`
                     : "loading..."
                 }
-                githubUrl="https://github.com/p8labs/kitab"
                 aboutLabel="Made by P8labs"
-                onCloseCurrentVault={closeCurrentVault}
-                onGoToOnboard={goToOnboard}
               />
             ) : (
               <HomeEditorWorkspace

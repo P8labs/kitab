@@ -1,11 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ArrowsSplitIcon, CodeIcon, EyeIcon } from "@phosphor-icons/react";
 import { useMemo, useRef, useState } from "react";
 import {
   Add01Icon,
   ArrowDown01Icon,
   Cancel01Icon,
+  CodeIcon,
+  ViewIcon,
+  ViewSidebarLeftIcon,
 } from "@hugeicons/core-free-icons";
 
 import { HIcon } from "@/components/ui/hicon";
@@ -52,11 +54,11 @@ const modeMeta: Record<EditorMode, { label: string; icon: typeof CodeIcon }> = {
   },
   preview: {
     label: "Preview",
-    icon: EyeIcon,
+    icon: ViewIcon,
   },
   live: {
     label: "Live",
-    icon: ArrowsSplitIcon,
+    icon: ViewSidebarLeftIcon,
   },
 };
 
@@ -116,6 +118,32 @@ export function HomeEditorWorkspace({
 }: HomeEditorWorkspaceProps) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(0);
+  const [hideSuggestions, setHideSuggestions] = useState(false);
+
+  const suggestionIndex = useMemo(() => {
+    const normalized = linkedNoteTitles
+      .map((title) => ({ title, lower: title.toLowerCase() }))
+      .sort((a, b) => a.lower.localeCompare(b.lower));
+
+    const byFirstChar = new Map<
+      string,
+      Array<{ title: string; lower: string }>
+    >();
+    normalized.forEach((item) => {
+      const key = item.lower[0] || "";
+      const bucket = byFirstChar.get(key);
+      if (bucket) {
+        bucket.push(item);
+      } else {
+        byFirstChar.set(key, [item]);
+      }
+    });
+
+    return {
+      all: normalized,
+      byFirstChar,
+    };
+  }, [linkedNoteTitles]);
 
   const wikiLinkQuery = useMemo(() => {
     const textarea = textareaRef.current;
@@ -127,22 +155,35 @@ export function HomeEditorWorkspace({
     if (!wikiLinkQuery) return [];
     const lookup = wikiLinkQuery.query.trim().toLowerCase();
 
-    const ranked = linkedNoteTitles
-      .filter((title) => {
-        if (!lookup) return true;
-        return title.toLowerCase().includes(lookup);
-      })
-      .sort((a, b) => {
-        const aLower = a.toLowerCase();
-        const bLower = b.toLowerCase();
-        const aStarts = lookup ? aLower.startsWith(lookup) : true;
-        const bStarts = lookup ? bLower.startsWith(lookup) : true;
-        if (aStarts !== bStarts) return aStarts ? -1 : 1;
-        return a.localeCompare(b, undefined, { sensitivity: "base" });
-      });
+    if (!lookup) {
+      return suggestionIndex.all.slice(0, 8).map((item) => item.title);
+    }
 
-    return ranked.slice(0, 8);
-  }, [linkedNoteTitles, wikiLinkQuery]);
+    const candidatePool =
+      suggestionIndex.byFirstChar.get(lookup[0]) ?? suggestionIndex.all;
+    const starts: string[] = [];
+    const includes: string[] = [];
+
+    for (const item of candidatePool) {
+      if (!item.lower.includes(lookup)) {
+        continue;
+      }
+
+      if (item.lower.startsWith(lookup)) {
+        starts.push(item.title);
+      } else {
+        includes.push(item.title);
+      }
+
+      if (starts.length + includes.length >= 8) {
+        if (starts.length >= 8) {
+          break;
+        }
+      }
+    }
+
+    return [...starts, ...includes].slice(0, 8);
+  }, [suggestionIndex, wikiLinkQuery]);
 
   const applySuggestion = (title: string) => {
     const textarea = textareaRef.current;
@@ -161,8 +202,9 @@ export function HomeEditorWorkspace({
 
     onContentChange(nextValue);
     setActiveSuggestionIndex(0);
+    setHideSuggestions(true);
 
-    const nextCaret = query.start + insertion.length;
+    const nextCaret = query.start + insertion.length + (hasClosing ? 2 : 0);
     requestAnimationFrame(() => {
       const target = textareaRef.current;
       if (!target) return;
@@ -202,8 +244,9 @@ export function HomeEditorWorkspace({
     }
   };
 
-  const markdownValue = wikilinkToMarkdownLink(
-    currentContent || "_No content yet._",
+  const markdownValue = useMemo(
+    () => wikilinkToMarkdownLink(currentContent || "_No content yet._"),
+    [currentContent],
   );
 
   return (
@@ -276,10 +319,7 @@ export function HomeEditorWorkspace({
                   : "text-text-muted hover:bg-surface-hover hover:text-text-primary",
               )}
             >
-              {(() => {
-                const Icon = modeMeta[mode].icon;
-                return <Icon className="size-3.5" />;
-              })()}
+              <HIcon icon={modeMeta[mode].icon} size={14} />
               <span>{modeMeta[mode].label}</span>
             </button>
           ))}
@@ -310,46 +350,53 @@ export function HomeEditorWorkspace({
                 <textarea
                   ref={textareaRef}
                   value={currentContent}
-                  onChange={(event) => onContentChange(event.target.value)}
+                  onChange={(event) => {
+                    setHideSuggestions(false);
+                    onContentChange(event.target.value);
+                  }}
                   onClick={() => setActiveSuggestionIndex(0)}
                   onKeyDown={onTextareaKeyDown}
                   className="bg-surface-panel text-text-primary h-full w-full resize-none px-5 py-4 text-[14px] leading-[1.7] font-medium outline-none"
                   placeholder="Start writing in Markdown..."
                 />
 
-                {noteSuggestions.length > 0 && wikiLinkQuery && (
-                  <div className="border-border absolute right-3 bottom-3 z-20 w-64 rounded-[8px] border bg-surface-sidebar p-1 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
-                    <p className="px-2 py-1 text-[10px] tracking-[0.06em] text-text-muted uppercase">
-                      Link note
-                    </p>
-                    <div className="max-h-44 overflow-auto">
-                      {noteSuggestions.map((title, index) => (
-                        <button
-                          key={title}
-                          type="button"
-                          className={cn(
-                            "flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px]",
-                            index === activeSuggestionIndex
-                              ? "bg-surface-active text-text-primary"
-                              : "text-text-muted hover:bg-surface-hover hover:text-text-primary",
-                          )}
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            applySuggestion(title);
-                          }}
-                        >
-                          <span className="truncate">{title}</span>
-                          <span className="text-[10px] opacity-65">[[ ]]</span>
-                        </button>
-                      ))}
+                {!hideSuggestions &&
+                  noteSuggestions.length > 0 &&
+                  wikiLinkQuery && (
+                    <div className="border-border absolute right-3 bottom-3 z-20 w-64 rounded-[8px] border bg-surface-sidebar p-1 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+                      <p className="px-2 py-1 text-[10px] tracking-[0.06em] text-text-muted uppercase">
+                        Link note
+                      </p>
+                      <div className="max-h-44 overflow-auto">
+                        {noteSuggestions.map((title, index) => (
+                          <button
+                            key={title}
+                            type="button"
+                            className={cn(
+                              "flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-[12px]",
+                              index === activeSuggestionIndex
+                                ? "bg-surface-active text-text-primary"
+                                : "text-text-muted hover:bg-surface-hover hover:text-text-primary",
+                            )}
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              applySuggestion(title);
+                            }}
+                          >
+                            <span className="truncate">{title}</span>
+                            <span className="text-[10px] opacity-65">
+                              [[ ]]
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             )}
 
             {(editorMode === "preview" || editorMode === "live") && (
-              <div className="markdown-preview h-full flex-1 overflow-auto px-5 py-4">
+              <div className="markdown-preview h-full flex-1 overflow-auto px-5 py-4 markdown">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{

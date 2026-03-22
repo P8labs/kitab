@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 @plugin "@tailwindcss/typography";
 
@@ -166,6 +165,36 @@
   }
 }
 
+.markdown table,
+.markdown-preview table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8rem 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-panel) 90%, transparent);
+}
+
+.markdown th,
+.markdown td,
+.markdown-preview th,
+.markdown-preview td {
+  padding: 6px 13px;
+  border: 1px solid var(--border);
+}
+
+.markdown th,
+.markdown-preview th {
+  background: color-mix(in srgb, var(--surface-sidebar) 72%, transparent);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.markdown tr:nth-child(even) td,
+.markdown-preview tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface-hover) 50%, transparent);
+}
 body::before {
   content: "";
   position: fixed;

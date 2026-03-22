@@ -1,7 +1,5 @@
-import { Add01Icon, ShutDownIcon } from "@hugeicons/core-free-icons";
 import { useEffect, useMemo, useState } from "react";
 
-import { HIcon } from "@/components/ui/hicon";
 import { cn } from "@/lib/utils";
 import type { ThemeMode } from "@/components/home/types";
 import type { AppShortcuts, ShortcutAction } from "@/state/app";
@@ -20,10 +18,7 @@ type HomeSettingsViewProps = {
   onShortcutReset: () => void;
   appVersion: string;
   osSummary: string;
-  githubUrl: string;
   aboutLabel: string;
-  onCloseCurrentVault: () => void;
-  onGoToOnboard: () => void;
 };
 
 const themeModes: ThemeMode[] = ["light", "dark"];
@@ -36,10 +31,7 @@ export function HomeSettingsView({
   onShortcutReset,
   appVersion,
   osSummary,
-  githubUrl,
   aboutLabel,
-  onCloseCurrentVault,
-  onGoToOnboard,
 }: HomeSettingsViewProps) {
   const [recordingAction, setRecordingAction] = useState<ShortcutAction | null>(
     null,

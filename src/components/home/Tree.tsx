@@ -1,9 +1,10 @@
 import {
-  CaretRight,
-  FileText,
-  FolderSimple,
-  StackSimple,
-} from "@phosphor-icons/react";
+  ArrowRight01Icon,
+  File01Icon,
+  Folder01Icon,
+  Layers01Icon,
+} from "@hugeicons/core-free-icons";
+import { HIcon } from "@/components/ui/hicon";
 
 type FileNode = {
   name: string;
@@ -52,9 +53,9 @@ export function Tree({
                 }`}
               >
                 {node.is_dir ? (
-                  <FolderSimple weight="fill" className="size-4" />
+                  <HIcon icon={Folder01Icon} size={16} />
                 ) : (
-                  <FileText weight="fill" className="size-4" />
+                  <HIcon icon={File01Icon} size={16} />
                 )}
               </span>
 
@@ -62,10 +63,18 @@ export function Tree({
                 <div className="flex items-center gap-2">
                   <span className="truncate">{node.name}</span>
                   {node.is_dir && (
-                    <StackSimple className="size-3 text-zinc-500" />
+                    <HIcon
+                      icon={Layers01Icon}
+                      className="text-zinc-500"
+                      size={12}
+                    />
                   )}
                   {isSelected && (
-                    <CaretRight className="size-3 text-blue-100/70" />
+                    <HIcon
+                      icon={ArrowRight01Icon}
+                      className="text-blue-100/70"
+                      size={12}
+                    />
                   )}
                 </div>
                 <p className="text-[11px] text-zinc-500 truncate group-hover:text-zinc-400">
