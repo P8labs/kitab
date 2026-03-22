@@ -1,9 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
-  RiCheckboxBlankLine,
-  RiCloseLine,
-  RiSubtractLine,
-} from "@remixicon/react";
+  Cancel01Icon,
+  MinusSignIcon,
+  SquareIcon,
+} from "@hugeicons/core-free-icons";
+import { HIcon } from "@/components/ui/hicon";
 import { cn } from "@/lib/utils";
 
 type TitlebarProps = {
@@ -20,7 +21,7 @@ export function Titlebar({ title, className, compact = false }: TitlebarProps) {
   return (
     <header
       className={cn(
-        "flex h-9 items-center border-b border-border bg-[var(--surface-sidebar)] text-[12px] text-[var(--text-muted)]",
+        "flex h-9 items-center border-b border-border bg-surface-sidebar text-[12px] text-text-muted",
         compact && "h-8",
         className,
       )}
@@ -30,7 +31,7 @@ export function Titlebar({ title, className, compact = false }: TitlebarProps) {
         data-tauri-drag-region
         className="flex h-full flex-1 items-center justify-center px-3 tracking-[0.02em]"
       >
-        <span className="truncate text-[11px] font-medium text-[var(--text-primary)]/85">
+        <span className="truncate text-[11px] font-medium text-(--text-primary)/85">
           {title}
         </span>
       </div>
@@ -41,7 +42,7 @@ export function Titlebar({ title, className, compact = false }: TitlebarProps) {
           className="titlebar-action"
           onClick={() => onAction("min")}
         >
-          <RiSubtractLine className="size-3.5" />
+          <HIcon icon={MinusSignIcon} size={14} />
         </button>
         <button
           type="button"
@@ -49,7 +50,7 @@ export function Titlebar({ title, className, compact = false }: TitlebarProps) {
           className="titlebar-action"
           onClick={() => onAction("max")}
         >
-          <RiCheckboxBlankLine className="size-3.5" />
+          <HIcon icon={SquareIcon} size={14} />
         </button>
         <button
           type="button"
@@ -57,7 +58,7 @@ export function Titlebar({ title, className, compact = false }: TitlebarProps) {
           className="titlebar-action titlebar-action-close"
           onClick={() => onAction("close")}
         >
-          <RiCloseLine className="size-3.5" />
+          <HIcon icon={Cancel01Icon} size={14} />
         </button>
       </div>
     </header>

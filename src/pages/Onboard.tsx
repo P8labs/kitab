@@ -4,17 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { open } from "@tauri-apps/plugin-dialog";
 
 import {
-  RiAddLine,
-  RiArrowRightSLine,
-  RiDeleteBinLine,
-  RiFolderOpenLine,
-  RiMapPin2Line,
-  RiTimeLine,
-} from "@remixicon/react";
+  Add01Icon,
+  ArrowRight01Icon,
+  Delete02Icon,
+  FolderOpenIcon,
+  MapPinIcon,
+  Time01Icon,
+} from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Titlebar } from "@/components/shell/Titlebar";
+import { HIcon } from "@/components/ui/hicon";
 
 import { useApp } from "@/state/app";
 
@@ -91,20 +92,20 @@ export default function Onboard() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[var(--app-base)] text-[13px] text-[var(--text-primary)]">
-      <Titlebar title="Misty - Vault Setup" compact />
+    <div className="h-screen w-screen overflow-hidden bg-app-base text-[13px] text-text-primary">
+      <Titlebar title="Kitab - Vault Setup" compact />
 
       <div className="flex h-[calc(100vh-2rem)] items-center justify-center px-4 py-6">
-        <div className="grid w-full max-w-4xl grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-[6px] border border-border bg-[var(--surface-panel)]">
+        <div className="grid w-full max-w-4xl grid-cols-[1.15fr_0.85fr] overflow-hidden rounded-[6px] border border-border bg-surface-panel">
           <section className="border-r border-border p-4">
-            <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-[var(--text-muted)]">
-              <RiAddLine className="size-4" />
+            <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.06em] text-text-muted">
+              <HIcon icon={Add01Icon} size={16} />
               Create vault
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1">
-                <Label className="text-[11px] text-[var(--text-muted)]">
+                <Label className="text-[11px] text-text-muted">
                   Vault name
                 </Label>
                 <Input
@@ -116,9 +117,7 @@ export default function Onboard() {
               </div>
 
               <div className="space-y-1">
-                <Label className="text-[11px] text-[var(--text-muted)]">
-                  Location
-                </Label>
+                <Label className="text-[11px] text-text-muted">Location</Label>
                 <div className="flex items-center gap-1.5">
                   <Input
                     className="h-8 flex-1"
@@ -137,13 +136,13 @@ export default function Onboard() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between border-y border-border py-2 text-[11px] text-[var(--text-muted)]">
+            <div className="mt-3 flex items-center justify-between border-y border-border py-2 text-text-muted">
               <div className="flex items-center gap-1">
-                <RiMapPin2Line className="size-3.5" />
+                <HIcon icon={MapPinIcon} size={14} />
                 <span>{path ? "Path selected" : "Waiting for location"}</span>
               </div>
               <div className="flex items-center gap-1">
-                <RiTimeLine className="size-3.5" />
+                <HIcon icon={Time01Icon} size={14} />
                 <span>Auto-save enabled</span>
               </div>
             </div>
@@ -161,20 +160,20 @@ export default function Onboard() {
                 onClick={openExistingVault}
                 className="h-8 px-2 text-[12px]"
               >
-                <RiFolderOpenLine className="mr-1 size-3.5" />
+                <HIcon icon={FolderOpenIcon} className="mr-1" size={14} />
                 Open existing
               </Button>
             </div>
           </section>
 
-          <aside className="bg-[var(--surface-sidebar)] p-4">
-            <div className="mb-2 text-[11px] uppercase tracking-[0.06em] text-[var(--text-muted)]">
+          <aside className="bg-surface-sidebar p-4">
+            <div className="mb-2 uppercase tracking-[0.06em] text-text-muted">
               Recent vaults
             </div>
 
             <div className="space-y-1.5">
               {recent.length === 0 && (
-                <div className="rounded-[5px] border border-border bg-[var(--surface-panel)] px-2 py-1.5 text-[12px] text-[var(--text-muted)]">
+                <div className="rounded-[5px] border border-border bg-surface-panel px-2 py-1.5 text-[12px] text-text-muted">
                   No recent vaults
                 </div>
               )}
@@ -182,13 +181,13 @@ export default function Onboard() {
               {recent.map((vault) => (
                 <div
                   key={vault.path}
-                  className="w-full rounded-[5px] border border-border bg-[var(--surface-panel)] px-2 py-1.5 text-left text-[12px]"
+                  className="w-full rounded-[5px] border border-border bg-surface-panel px-2 py-1.5 text-left text-[12px]"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => openVault(vault)}
-                      className="min-w-0 flex-1 truncate text-left font-medium text-[var(--text-primary)] hover:text-white"
+                      className="min-w-0 flex-1 truncate text-left font-medium text-text-primary hover:text-white"
                     >
                       {vault.name}
                     </button>
@@ -199,7 +198,7 @@ export default function Onboard() {
                         title="Remove from recents"
                         onClick={() => removeVault(vault.path)}
                       >
-                        <RiDeleteBinLine className="size-3" />
+                        <HIcon icon={Delete02Icon} size={15} />
                       </button>
                       <button
                         type="button"
@@ -207,11 +206,15 @@ export default function Onboard() {
                         title="Open vault"
                         onClick={() => openVault(vault)}
                       >
-                        <RiArrowRightSLine className="size-3.5 text-[var(--text-muted)]" />
+                        <HIcon
+                          icon={ArrowRight01Icon}
+                          className="text-text-muted"
+                          size={14}
+                        />
                       </button>
                     </div>
                   </div>
-                  <p className="truncate text-[11px] text-[var(--text-muted)]">
+                  <p className="truncate text-[11px] text-text-muted">
                     {vault.path}
                   </p>
                 </div>
