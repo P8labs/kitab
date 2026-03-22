@@ -23,9 +23,13 @@ import type {
   FileNode,
   LeftView,
   SaveState,
-  ThemeMode,
 } from "@/components/home/types";
 import { useApp } from "@/state/app";
+import {
+  eventToShortcut,
+  isEditableElement,
+  normalizeShortcut,
+} from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 
 const railItems: Array<{
@@ -64,7 +68,16 @@ const isSameOrChildPath = (candidate: string, parent: string) => {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setHasVault } = useApp();
+  const {
+    setHasVault,
+    themeMode,
+    setThemeMode,
+    shortcuts,
+    setShortcut,
+    resetShortcuts,
+    systemInfo,
+    loadSystemInfo,
+  } = useApp();
 
   const [tree, setTree] = useState<FileNode[]>([]);
   const [childrenByPath, setChildrenByPath] = useState<
@@ -97,15 +110,6 @@ export default function Home() {
 
   const [bottomVisible, setBottomVisible] = useState(true);
   const [bottomTab, setBottomTab] = useState<BottomTab>("outline");
-  const [themeMode, setThemeMode] = useState<ThemeMode>(() => {
-    const stored = localStorage.getItem("kitab-theme");
-    if (stored === "dark" || stored === "light") {
-      return stored;
-    }
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  });
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestContentRef = useRef<Record<string, string>>({});
@@ -122,8 +126,11 @@ export default function Home() {
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", themeMode === "dark");
-    localStorage.setItem("kitab-theme", themeMode);
   }, [themeMode]);
+
+  useEffect(() => {
+    void loadSystemInfo();
+  }, [loadSystemInfo]);
 
   const fetchDirectory = async (path: string) => {
     const res = (await invoke("read_dir", { path })) as FileNode[];
@@ -257,24 +264,81 @@ export default function Home() {
     };
   }, [activeFile, currentContent]);
 
+  const startCreate = (parentPath: string | null, type: CreateType) => {
+    setDraftRename(null);
+    setDraftCreate({
+      parentPath,
+      type,
+      name: "",
+    });
+  };
+
+  const startRootCreate = (type: CreateType) => {
+    if (sidebarCollapsed) {
+      setSidebarCollapsed(false);
+    }
+
+    if (leftView !== "vault") {
+      setLeftView("vault");
+    }
+
+    startCreate(null, type);
+  };
+
+  const startRootFileCreate = () => {
+    startRootCreate("file");
+  };
+
+  const startRootFolderCreate = () => {
+    startRootCreate("folder");
+  };
+
+  const closeTab = (path: string) => {
+    setTabs((prev) => {
+      const nextTabs = prev.filter((tab) => tab !== path);
+      if (activeFile === path) {
+        setActiveFile(nextTabs[nextTabs.length - 1] ?? null);
+      }
+      return nextTabs;
+    });
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        setSidebarCollapsed(false);
-        setLeftView("vault");
-        startCreate(null, "file");
-      }
-
       if (event.key === "Escape") {
         setDraftCreate(null);
         setDraftRename(null);
+        return;
+      }
+
+      if (isEditableElement(event.target)) {
+        return;
+      }
+
+      const pressed = eventToShortcut(event);
+
+      if (pressed === normalizeShortcut(shortcuts.newFolder)) {
+        event.preventDefault();
+        startRootFolderCreate();
+        return;
+      }
+
+      if (pressed === normalizeShortcut(shortcuts.newFile)) {
+        event.preventDefault();
+        startRootFileCreate();
+        return;
+      }
+
+      if (pressed === normalizeShortcut(shortcuts.closeTab)) {
+        if (!activeFile) return;
+        event.preventDefault();
+        closeTab(activeFile);
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [activeFile, shortcuts, startRootFileCreate, startRootFolderCreate]);
 
   useEffect(() => {
     if (!draftCreate) return;
@@ -290,37 +354,6 @@ export default function Home() {
       document.removeEventListener("mousedown", dismissDraftOnOutsideClick);
     };
   }, [draftCreate]);
-
-  const closeTab = (path: string) => {
-    setTabs((prev) => {
-      const nextTabs = prev.filter((tab) => tab !== path);
-      if (activeFile === path) {
-        setActiveFile(nextTabs[nextTabs.length - 1] ?? null);
-      }
-      return nextTabs;
-    });
-  };
-
-  const startCreate = (parentPath: string | null, type: CreateType) => {
-    setDraftRename(null);
-    setDraftCreate({
-      parentPath,
-      type,
-      name: "",
-    });
-  };
-
-  const startRootFileCreate = () => {
-    if (sidebarCollapsed) {
-      setSidebarCollapsed(false);
-    }
-
-    if (leftView !== "vault") {
-      setLeftView("vault");
-    }
-
-    startCreate(null, "file");
-  };
 
   const submitCreate = async () => {
     if (!draftCreate || !vaultPath || !draftCreate.name.trim()) return;
@@ -606,6 +639,17 @@ export default function Home() {
               <HomeSettingsView
                 themeMode={themeMode}
                 setThemeMode={setThemeMode}
+                shortcuts={shortcuts}
+                onShortcutChange={setShortcut}
+                onShortcutReset={resetShortcuts}
+                appVersion={systemInfo?.appVersion ?? "loading..."}
+                osSummary={
+                  systemInfo
+                    ? `${systemInfo.platform} / ${systemInfo.osType} ${systemInfo.version} (${systemInfo.arch})`
+                    : "loading..."
+                }
+                githubUrl="https://github.com/p8labs"
+                aboutLabel="Made by P8labs"
                 onCloseCurrentVault={closeCurrentVault}
                 onGoToOnboard={goToOnboard}
               />
