@@ -48,19 +48,13 @@
         "displayLanguageSelector": true,
         "minimumWebview2Version": "110.0.1531.0",
         "installerHooks": "./windows/hooks.nsh",
-        "languages": [
-          "English"
-        ]
+        "languages": ["English"]
       },
       "wix": {
         "language": "en-US",
         "upgradeCode": "ddace959-7ff0-562e-8a39-d08ebd3ff5af",
-        "fragmentPaths": [
-          "./windows/fragments/registry.wxs"
-        ],
-        "componentRefs": [
-          "KitabRegistryEntries"
-        ]
+        "fragmentPaths": ["./windows/fragments/registry.wxs"],
+        "componentRefs": ["KitabRegistryEntries"]
       }
     },
     "icon": [
@@ -73,7 +67,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE0NzFCMENGRTE1MzUyRjMKUldUelVsUGh6N0J4cExad1N2bnhFTTVJVEh0cVRhYjZCNW9sWFVoTlJlNGRTVVc1VUxmbGQxK1UK",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEIzODAzQzVEMDY0MTg2QkQKUldTOWhrRUdYVHlBczFwZ2xWVTB1aWNycG9CQXVLV2FVZnhHM3pMQUdtUFc4Y0pWU1A3M0pDU1oK",
       "endpoints": [
         "https://github.com/P8labs/kitab/releases/latest/download/latest.json"
       ],
