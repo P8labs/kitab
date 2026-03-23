@@ -6,7 +6,7 @@ import { useApp } from "@/state/app";
 export default function Gatekeeper({ children }: any) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasVault, setHasVault } = useApp();
+  const { hasVault, setHasVault, checkForUpdates } = useApp();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,6 +19,10 @@ export default function Gatekeeper({ children }: any) {
 
     init();
   }, []);
+
+  useEffect(() => {
+    void checkForUpdates();
+  }, [checkForUpdates]);
 
   useEffect(() => {
     if (loading) return;

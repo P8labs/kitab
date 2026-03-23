@@ -1,4 +1,5 @@
 import { getVersion } from "@tauri-apps/api/app";
+import { check } from "@tauri-apps/plugin-updater";
 import {
   arch,
   family,
@@ -25,16 +26,29 @@ type SystemInfo = {
   appVersion: string;
 };
 
+type UpdateStatus =
+  | "idle"
+  | "checking"
+  | "up-to-date"
+  | "available"
+  | "downloading"
+  | "installed"
+  | "failed";
+
 type AppState = {
   hasVault: boolean;
   themeMode: ThemeMode;
   shortcuts: AppShortcuts;
   systemInfo: SystemInfo | null;
+  updateStatus: UpdateStatus;
+  updateError: string | null;
+  updateVersion: string | null;
   setHasVault: (value: boolean) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setShortcut: (action: ShortcutAction, combo: string) => void;
   resetShortcuts: () => void;
   loadSystemInfo: () => Promise<void>;
+  checkForUpdates: () => Promise<void>;
   refresh: () => void;
   refreshToken: number;
 };
@@ -61,6 +75,9 @@ export const useAppStore = create<AppState>()(
       themeMode: resolveThemeMode(),
       shortcuts: normalizeShortcuts(defaultShortcuts),
       systemInfo: null,
+      updateStatus: "idle",
+      updateError: null,
+      updateVersion: null,
       refreshToken: 0,
       setHasVault: (value) => set({ hasVault: value }),
       setThemeMode: (mode) => set({ themeMode: mode }),
@@ -97,6 +114,32 @@ export const useAppStore = create<AppState>()(
           set({ systemInfo: info });
         } catch {
           set({ systemInfo: fallback });
+        }
+      },
+      checkForUpdates: async () => {
+        set({ updateStatus: "checking", updateError: null });
+
+        try {
+          const update = await check();
+
+          if (!update) {
+            set({ updateStatus: "up-to-date", updateVersion: null });
+            return;
+          }
+
+          set({ updateStatus: "available", updateVersion: update.version });
+
+          await update.downloadAndInstall(() => {
+            set({ updateStatus: "downloading" });
+          });
+
+          set({ updateStatus: "installed" });
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Failed to check for updates";
+          set({ updateStatus: "failed", updateError: message });
         }
       },
       refresh: () =>

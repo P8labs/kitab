@@ -17,6 +17,10 @@ type HomeSettingsViewProps = {
   onShortcutChange: (action: ShortcutAction, combo: string) => void;
   onShortcutReset: () => void;
   appVersion: string;
+  updateStatus: string;
+  updateVersion: string | null;
+  updateError: string | null;
+  onCheckForUpdates: () => void;
   osSummary: string;
   aboutLabel: string;
 };
@@ -30,6 +34,10 @@ export function HomeSettingsView({
   onShortcutChange,
   onShortcutReset,
   appVersion,
+  updateStatus,
+  updateVersion,
+  updateError,
+  onCheckForUpdates,
   osSummary,
   aboutLabel,
 }: HomeSettingsViewProps) {
@@ -172,6 +180,45 @@ export function HomeSettingsView({
           <div className="grid gap-y-2 text-[12px] sm:grid-cols-[140px_1fr] sm:items-center">
             <p className="text-text-muted">Version</p>
             <p className="break-all text-text-primary">{appVersion}</p>
+
+            <p className="text-text-muted">Update</p>
+            <div className="flex flex-col gap-2 text-text-primary">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="break-all">
+                  {updateStatus === "checking"
+                    ? "Checking for updates..."
+                    : updateStatus === "up-to-date"
+                      ? "Up to date"
+                      : updateStatus === "available"
+                        ? `Update available: ${updateVersion ?? "unknown"}`
+                        : updateStatus === "downloading"
+                          ? `Downloading update ${updateVersion ?? ""}`.trim()
+                          : updateStatus === "installed"
+                            ? "Update installed. Restart app to apply."
+                            : updateStatus === "failed"
+                              ? "Update check failed"
+                              : "Not checked yet"}
+                </span>
+                <button
+                  type="button"
+                  className="rounded-full border border-black/12 bg-surface-sidebar px-3 py-1.5 text-[11px] text-text-primary shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:bg-surface-hover dark:border-white/45 dark:bg-surface-sidebar/70 dark:text-text-muted dark:shadow-[0_4px_18px_rgba(20,20,20,0.05)] dark:hover:bg-surface-hover"
+                  onClick={onCheckForUpdates}
+                  disabled={
+                    updateStatus === "checking" ||
+                    updateStatus === "downloading"
+                  }
+                >
+                  {updateStatus === "checking" || updateStatus === "downloading"
+                    ? "Please wait"
+                    : "Check now"}
+                </button>
+              </div>
+              {updateError && (
+                <p className="break-all text-[11px] text-rose-500 dark:text-rose-300">
+                  {updateError}
+                </p>
+              )}
+            </div>
 
             <p className="text-text-muted">OS</p>
             <p className="wrap-break-word text-text-primary">{osSummary}</p>

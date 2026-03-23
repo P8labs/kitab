@@ -32,7 +32,6 @@ export default function Onboard() {
   const [loading, setLoading] = useState(false);
   const [recent, setRecent] = useState<Vault[]>([]);
 
-  // 🔥 load recent vaults
   useEffect(() => {
     async function load() {
       const config: any = await invoke("get_config");

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <DirectoryRef Id="TARGETDIR">
+      <Component Id="KitabRegistryEntries" Guid="*">
+        <RegistryKey Root="HKCU" Key="Software\P8labs\Kitab" Action="createAndRemoveOnUninstall">
+          <RegistryValue Type="string" Name="Publisher" Value="P8labs" KeyPath="yes" />
+          <RegistryValue Type="string" Name="SupportUrl" Value="https://github.com/P8labs/kitab/issues" />
+          <RegistryValue Type="string" Name="Homepage" Value="https://github.com/P8labs/kitab" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

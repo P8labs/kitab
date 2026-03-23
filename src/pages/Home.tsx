@@ -82,6 +82,10 @@ export default function Home() {
     resetShortcuts,
     systemInfo,
     loadSystemInfo,
+    checkForUpdates,
+    updateStatus,
+    updateVersion,
+    updateError,
   } = useApp();
 
   const [tree, setTree] = useState<FileNode[]>([]);
@@ -781,6 +785,12 @@ export default function Home() {
                 onShortcutChange={setShortcut}
                 onShortcutReset={resetShortcuts}
                 appVersion={systemInfo?.appVersion ?? "loading..."}
+                updateStatus={updateStatus}
+                updateVersion={updateVersion}
+                updateError={updateError}
+                onCheckForUpdates={() => {
+                  void checkForUpdates();
+                }}
                 osSummary={
                   systemInfo
                     ? `${systemInfo.platform} / ${systemInfo.osType} ${systemInfo.version} (${systemInfo.arch})`
