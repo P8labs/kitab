@@ -79,7 +79,6 @@ jobs:
             ## Bug Reports
             - Report issues here: https://github.com/${{ github.repository }}/issues/new/choose
           tagName: ${{ github.ref_name }}
-          args: --features custom-protocol
 
       - name: List build artifacts
         run: |
