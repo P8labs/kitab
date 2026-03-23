@@ -41,7 +41,7 @@ jobs:
           workspaces: src-tauri
 
       - name: Install frontend dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install
 
       - name: Build SPA
         run: pnpm build
@@ -61,11 +61,23 @@ jobs:
         with:
           releaseName: ${{ github.ref_name }}
           releaseBody: |
-            Release artifacts available below.
+            ## Changelog
+            - Release `${{ github.ref_name }}` is now available.
+            - See commit history: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}
+
+            ## Artifacts
             - Windows setup installer (.exe)
             - Windows MSI installer (.msi)
             - Portable zip (.zip)
             - Updater metadata and signatures (latest.json / .sig)
+
+            ## Windows Install Note
+            - Windows may show a warning/block screen during installation because this app is not yet registered with a commercial trust program.
+            - This is an indie project and we do not currently have funding for that registration.
+            - The app is safe to use and fully open source: https://github.com/${{ github.repository }}
+
+            ## Bug Reports
+            - Report issues here: https://github.com/${{ github.repository }}/issues/new/choose
           tagName: ${{ github.ref_name }}
           args: --features custom-protocol
 
