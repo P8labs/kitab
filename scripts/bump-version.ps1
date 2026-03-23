@@ -154,7 +154,7 @@ function Create-Tag {
     
     Write-Success-Color "Tag created: $tag`n"
     Write-Info-Color "To push and trigger release workflow:"
-    Write-Warning-Color "  git push origin main && git push origin $tag`n"
+    Write-Warning-Color "  git push origin master && git push origin $tag`n"
 }
 
 function Show-Info {

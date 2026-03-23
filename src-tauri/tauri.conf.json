@@ -48,13 +48,19 @@
         "displayLanguageSelector": true,
         "minimumWebview2Version": "110.0.1531.0",
         "installerHooks": "./windows/hooks.nsh",
-        "languages": ["English"]
+        "languages": [
+          "English"
+        ]
       },
       "wix": {
         "language": "en-US",
         "upgradeCode": "ddace959-7ff0-562e-8a39-d08ebd3ff5af",
-        "fragmentPaths": ["./windows/fragments/registry.wxs"],
-        "componentRefs": ["KitabRegistryEntries"]
+        "fragmentPaths": [
+          "./windows/fragments/registry.wxs"
+        ],
+        "componentRefs": [
+          "KitabRegistryEntries"
+        ]
       }
     },
     "icon": [
