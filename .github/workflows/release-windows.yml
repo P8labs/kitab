@@ -79,12 +79,37 @@ jobs:
             ## Bug Reports
             - Report issues here: https://github.com/${{ github.repository }}/issues/new/choose
           tagName: ${{ github.ref_name }}
+          generateReleaseNotes: true
+
+      - name: Create portable zip
+        shell: pwsh
+        run: |
+          $portableDir = "src-tauri/target/release/bundle/portable"
+          New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
+
+          $binaryPath = "src-tauri/target/release/kitab.exe"
+          if (-not (Test-Path $binaryPath)) {
+            throw "Portable binary not found at $binaryPath"
+          }
+
+          $portableBinaryPath = Join-Path $portableDir "kitab.exe"
+          Copy-Item -Path $binaryPath -Destination $portableBinaryPath -Force
+
+          $zipName = "kitab_${{ github.ref_name }}_windows_x64_portable.zip"
+          $zipPath = Join-Path $portableDir $zipName
+          if (Test-Path $zipPath) {
+            Remove-Item $zipPath -Force
+          }
+
+          Compress-Archive -Path $portableBinaryPath -DestinationPath $zipPath
+          Write-Host "Created portable zip: $zipPath"
 
       - name: List build artifacts
         run: |
           Write-Host "=== Build Artifacts ==="
           Get-ChildItem -Path "src-tauri/target/release/bundle/msi" -Recurse
           Get-ChildItem -Path "src-tauri/target/release/bundle/nsis" -Recurse
+          Get-ChildItem -Path "src-tauri/target/release/bundle/portable" -Recurse
           Get-ChildItem -Path "src-tauri/target/release/bundle" -Filter "latest.json" -Recurse
 
       - name: Upload release assets
@@ -92,7 +117,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            src-tauri/target/release/bundle/nsis/*.zip
+            src-tauri/target/release/bundle/portable/*.zip
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/**/*.sig

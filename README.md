@@ -4,6 +4,22 @@ Kitab is a lightweight desktop note taking app built using Tauri and Rust. It is
 
 Notes are just markdown files and everything works directly on filesystem. There is no database, so it stays simple and easy to manage.
 
+## Platform Support
+
+| Platform | Status        | Type            | Download                                             |
+| -------- | ------------- | --------------- | ---------------------------------------------------- |
+| Windows  | ✅ Stable     | Portable (zip)  | [Download](https://github.com/P8labs/kitab/releases) |
+|          |               | MSI Installer   | [Download](https://github.com/P8labs/kitab/releases) |
+|          |               | Setup Installer | [Download](https://github.com/P8labs/kitab/releases) |
+| Linux    | ⚠️ Not tested | —               | —                                                    |
+| macOS    | ⚠️ Not tested | —               | —                                                    |
+
+## Note (Windows)
+
+While installing on Windows, you may see a warning or block screen saying the app is from an unknown publisher.
+This happens because the app is not registered under a commercial code signing program yet.
+This is an indie project and currently there is no funding for that registration.
+
 ## Features
 
 Kitab supports multiple vaults so you can manage different note collections. It has a markdown editor with live preview which feels smooth while writing. Backlinks are included so notes can connect like a wiki system, and `[[note]]` style linking is supported.
