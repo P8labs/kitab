@@ -53,33 +53,7 @@ jobs:
           }
 
       - name: Build Tauri application
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          releaseName: ${{ github.ref_name }}
-          releaseBody: |
-            ## Changelog
-            - Release `${{ github.ref_name }}` is now available.
-            - See commit history: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}
-
-            ## Artifacts
-            - Windows setup installer (.exe)
-            - Windows MSI installer (.msi)
-            - Portable zip (.zip)
-            - Updater metadata and signatures (latest.json / .sig)
-
-            ## Windows Install Note
-            - Windows may show a warning/block screen during installation because this app is not yet registered with a commercial trust program.
-            - This is an indie project and we do not currently have funding for that registration.
-            - The app is safe to use and fully open source: https://github.com/${{ github.repository }}
-
-            ## Bug Reports
-            - Report issues here: https://github.com/${{ github.repository }}/issues/new/choose
-          tagName: ${{ github.ref_name }}
-          generateReleaseNotes: true
+        run: pnpm tauri build --target x86_64-pc-windows-msvc
 
       - name: Create portable zip
         shell: pwsh
@@ -116,11 +90,38 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          body: |
+            ## Changelog
+            - Release `${{ github.ref_name }}` is now available.
+            - See commit history: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}
+
+            ## Artifacts
+            - Windows setup installer (.exe)
+            - Windows MSI installer (.msi)
+            - Portable zip (.zip)
+            - Updater metadata and signatures (latest.json / .sig)
+
+            ## Windows Install Note
+            - Windows may show a warning/block screen during installation because this app is not yet registered with a commercial trust program.
+            - This is an indie project and we do not currently have funding for that registration.
+            - The app is safe to use and fully open source: https://github.com/${{ github.repository }}
+
+            ## Bug Reports
+            - Report issues here: https://github.com/${{ github.repository }}/issues/new/choose
           files: |
             src-tauri/target/release/bundle/portable/*.zip
             src-tauri/target/release/bundle/msi/*.msi
             src-tauri/target/release/bundle/nsis/*.exe
             src-tauri/target/release/bundle/**/*.sig
             src-tauri/target/release/bundle/**/latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish release
+        shell: pwsh
+        run: gh release edit "${{ github.ref_name }}" --draft=false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
