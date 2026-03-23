@@ -211,6 +211,12 @@ pub fn search_notes_content(vault_path: &Path, query: &str) -> Vec<NoteEntry> {
     let mut hits: Vec<NoteEntry> = notes
         .into_par_iter()
         .filter_map(|note| {
+            let title_match = note.title.to_lowercase().contains(&query);
+            let path_match = note.path.to_lowercase().contains(&query);
+            if title_match || path_match {
+                return Some(note);
+            }
+
             let content = fs::read_to_string(&note.path).ok()?;
             if content.to_lowercase().contains(&query) {
                 Some(note)
